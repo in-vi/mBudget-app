@@ -168,23 +168,20 @@
                     const categorySelect = document.getElementById("category");
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
         
-                    // Track categories with amounts
-                    const categoriesWithAmounts = new Set();
+                    // Track all unique categories
+                    const allCategories = new Set();
         
                     data.forEach((row, index) => {
                         const [expenseName, projected, actuals] = row;
                         if (
                             !expenseName || 
-                            ["EXPENSES", "HOME", "TOTAL"].includes(expenseName) || 
-                            (!projected && !actuals)
+                            ["EXPENSES", "HOME"].includes(expenseName)
                         ) return;
         
-                        const difference = projected - actuals;
+                        // Add all non-filtered categories to the set
+                        allCategories.add(expenseName);
         
-                        // Check if there's a meaningful amount (projected or actual)
-                        if (Number(projected) > 0 || Number(actuals) > 0) {
-                            categoriesWithAmounts.add(expenseName);
-                        }
+                        const difference = projected - actuals;
         
                         const tr = document.createElement("tr");
                         [expenseName, projected, actuals, difference].forEach((value, idx) => {
@@ -198,8 +195,8 @@
                         table.appendChild(tr);
                     });
         
-                    // Populate dropdown with categories that have amounts
-                    categoriesWithAmounts.forEach(category => {
+                    // Populate dropdown with all categories
+                    allCategories.forEach(category => {
                         const option = document.createElement("option");
                         option.value = category;
                         option.textContent = category;
