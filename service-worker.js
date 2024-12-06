@@ -3,13 +3,20 @@ const urlsToCache = [
     "/",
     "/index.html",
     "/style.css",
-    "/script.js"
+    "/script.js",
+    "/icons/groceries.jpeg",
+    "/icons/eat-out.jpeg",
+    "/icons/train.jpeg"
 ];
 
 self.addEventListener("install", (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(urlsToCache);
+            return cache.addAll(urlsToCache).then(() => {
+                console.log("All files cached successfully");
+            }).catch((error) => {
+                console.error("Failed to cache files:", error);
+            });
         })
     );
 });
