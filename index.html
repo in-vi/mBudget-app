@@ -107,13 +107,16 @@
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden; /* Ensure the image does not overflow the button */
         }
         .quick-select button:hover {
             background-color: #ddd;
         }
         .quick-select button img {
-            width: 50px;
-            height: 50px;
+            width: 70px; /* Adjust the size as needed */
+            height: 70px; /* Adjust the size as needed */
+            object-fit: contain; /* Ensure the image fits within the button */
         }
     </style>
 </head>
@@ -130,13 +133,13 @@
 
         <div class="quick-select">
             <button onclick="selectCategory('Groceries')">
-                <img src="icons/groceries.png" alt="Groceries">
+                <img src="/icons/groceries.png" alt="Groceries">
             </button>
             <button onclick="selectCategory('Eat Out')">
-                <img src="icons/eat-out.png" alt="Eat Out">
+                <img src="/icons/eat-out.png" alt="Eat Out">
             </button>
             <button onclick="selectCategory('Public Transportation')">
-                <img src="icons/train.png" alt="Public Transportation">
+                <img src="/icons/train.png" alt="Public Transportation">
             </button>
         </div>
 
