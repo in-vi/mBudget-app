@@ -45,6 +45,13 @@
     <h1>Budget Tracker</h1>
     
     <div>
+        <!-- Dropdown for selecting the month -->
+        <label for="monthSelector">Select Month:</label>
+        <select id="monthSelector"></select>
+        <button onclick="loadData()">Load Data</button>
+    </div>
+
+    <div>
         <form id="addEntryForm">
             <select id="category" required>
                 <option value="">Select Category</option>
@@ -55,46 +62,67 @@
         </form>
     </div>
 
-    <div>
-        <h2>Fetch Data</h2>
-        <button onclick="fetchData()">Fetch Data</button>
-    </div>
-    
     <div id="output"></div>
     <div id="message"></div>
 
     <script>
-        // Web App URL - replace with your actual deployed web app URL
         const webAppUrl = "https://script.google.com/macros/s/AKfycbxaXE-fAQnhdqxnwA6Mgopdz40LoMtvPl-ubhtJwresDIPp4W2y_Vtfc1VDF620QTMsuA/exec";
 
-        // Categories to exclude
         const excludedCategories = ["", "TOTAL", "PROJECTED", "ACTUAL", "DIFFERENCE"];
 
-        // Fetch Data Function
-        function fetchData() {
-            fetch(webAppUrl)
+        // Populate the month dropdown
+        function populateMonths() {
+            const monthSelector = document.getElementById("monthSelector");
+            const months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+
+            const currentMonthIndex = new Date().getMonth();
+            
+            months.forEach((month, index) => {
+                const option = document.createElement("option");
+                option.value = month;
+                option.textContent = month;
+
+                // Pre-select the current month
+                if (index === currentMonthIndex) {
+                    option.selected = true;
+                }
+
+                monthSelector.appendChild(option);
+            });
+        }
+
+        // Load data for the selected month
+        function loadData() {
+            const selectedMonth = document.getElementById("monthSelector").value;
+            fetchData(selectedMonth);
+        }
+
+        // Fetch data from the Google Apps Script
+        function fetchData(month) {
+            fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
                 .then(response => response.json())
                 .then(data => {
+                    if (data.error) {
+                        document.getElementById("output").textContent = data.error;
+                        return;
+                    }
+
                     const outputDiv = document.getElementById("output");
                     outputDiv.innerHTML = "";  // Clear previous data
-                    
-                    // Create table
+
                     const table = document.createElement("table");
-                    
-                    // Populate category dropdown
+
                     const categorySelect = document.getElementById("category");
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
-                    
-                    // Process data
+
                     data.forEach((row, index) => {
-                        // Skip header rows and total row
                         if (index === 0 || row[0] === "TOTAL") return;
-                        
-                        // Check if row represents a section or a specific category
-                        if (row[0] === "EXPENSES" || row[0] === "TRANSPORTATION" || 
-                            row[0] === "DAILY LIVING" || row[0] === "ENTERTAINMENT" || 
-                            row[0] === "HEALTH" || row[0] === "VACATION / HOLIDAY") {
-                            // Add section header row
+
+                        if (["EXPENSES", "TRANSPORTATION", "DAILY LIVING", "ENTERTAINMENT", 
+                             "HEALTH", "VACATION / HOLIDAY"].includes(row[0])) {
                             const sectionRow = document.createElement("tr");
                             const sectionCell = document.createElement("td");
                             sectionCell.textContent = row[0];
@@ -104,24 +132,19 @@
                             table.appendChild(sectionRow);
                             return;
                         }
-                        
-                        // Skip empty or header-like rows
-                        if (!row[0] || row[0] === "") return;
-                        
-                        // Add to category dropdown
+
+                        if (!row[0]) return;
+
                         if (!excludedCategories.includes(row[0])) {
                             const option = document.createElement("option");
                             option.value = row[0];
                             option.textContent = row[0];
                             categorySelect.appendChild(option);
                         }
-                        
-                        // Create data row
+
                         const tr = document.createElement("tr");
                         row.forEach((cell, cellIndex) => {
                             const td = document.createElement("td");
-                            
-                            // Format numbers
                             if (cellIndex > 0) {
                                 const numCell = Number(cell);
                                 td.textContent = isNaN(numCell) ? cell : 
@@ -131,20 +154,18 @@
                                         minimumFractionDigits: 0, 
                                         maximumFractionDigits: 0
                                     });
-                                
-                                // Color code difference column
+
                                 if (cellIndex === 3 && numCell !== 0) {
                                     td.classList.add(numCell > 0 ? 'positive' : 'negative');
                                 }
                             } else {
                                 td.textContent = cell;
                             }
-                            
                             tr.appendChild(td);
                         });
                         table.appendChild(tr);
                     });
-                    
+
                     outputDiv.appendChild(table);
                 })
                 .catch(error => {
@@ -153,57 +174,48 @@
                 });
         }
 
-        // Handle Form Submission
+        // Submit new entry to the Google Apps Script
         document.getElementById("addEntryForm").addEventListener("submit", function(event) {
-            event.preventDefault();  // Prevent default form submission
+            event.preventDefault();
 
-            // Get form values
             const category = document.getElementById("category").value;
             const amount = parseFloat(document.getElementById("amount").value);
+            const month = document.getElementById("monthSelector").value;
             const messageDiv = document.getElementById("message");
 
-            // Validate inputs
             if (!category || isNaN(amount)) {
-                messageDiv.textContent = "Please select a category and enter a valid amount";
+                messageDiv.textContent = "Please select a category and enter a valid amount.";
                 messageDiv.style.color = "red";
                 return;
             }
 
-            // Prepare data to send
-            const formData = {
-                category: category,
-                amount: amount
-            };
+            const formData = { category, amount, month };
 
-            // Send data to Google Apps Script
             fetch(webAppUrl, {
                 method: "POST",
-                mode: "no-cors",  // Important for cross-origin requests
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             })
             .then(() => {
                 messageDiv.textContent = "Data submitted successfully!";
                 messageDiv.style.color = "green";
-                
-                // Clear form
                 document.getElementById("category").selectedIndex = 0;
                 document.getElementById("amount").value = "";
-
-                // Refresh data
-                fetchData();
+                fetchData(month);
             })
             .catch(error => {
                 console.error("Error:", error);
-                messageDiv.textContent = "Error submitting data";
+                messageDiv.textContent = "Error submitting data.";
                 messageDiv.style.color = "red";
             });
         });
 
-        // Fetch data on page load
-        fetchData();
+        // Populate months and load data on page load
+        window.onload = () => {
+            populateMonths();
+            loadData();
+        };
     </script>
 </body>
 </html>
