@@ -24,7 +24,8 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("output").innerText = JSON.stringify(data, null, 2);
-                });
+                })
+                .catch(error => console.error("Error fetching data:", error));
         }
 
         function writeData(event) {
@@ -39,7 +40,9 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ name, age, email })
-            }).then(() => alert("Data submitted successfully!"));
+            })
+            .then(() => alert("Data submitted successfully!"))
+            .catch(error => console.error("Error submitting data:", error));
         }
     </script>
 </body>
