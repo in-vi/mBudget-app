@@ -122,7 +122,7 @@
                 "January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"
             ];
-
+        
             const currentMonthIndex = new Date().getMonth();
             months.forEach((month, index) => {
                 const option = document.createElement("option");
@@ -134,13 +134,13 @@
                 monthSelector.appendChild(option);
             });
         }
-
+        
         // Load data for the selected month
         function loadData() {
             const selectedMonth = document.getElementById("monthSelector").value;
             fetchData(selectedMonth);
         }
-
+        
         // Fetch data from the Google Apps Script
         function fetchData(month) {
             fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
@@ -150,12 +150,12 @@
                         showMessage(data.error, "error");
                         return;
                     }
-
+        
                     const outputDiv = document.getElementById("output");
                     outputDiv.innerHTML = ""; // Clear previous data
-
+        
                     const table = document.createElement("table");
-
+        
                     // Create table header
                     const headerRow = document.createElement("tr");
                     ["Expense", "Projected", "Actuals", "Difference"].forEach(heading => {
@@ -164,20 +164,28 @@
                         headerRow.appendChild(th);
                     });
                     table.appendChild(headerRow);
-
+        
                     const categorySelect = document.getElementById("category");
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
-
+        
+                    // Track categories with amounts
+                    const categoriesWithAmounts = new Set();
+        
                     data.forEach((row, index) => {
                         const [expenseName, projected, actuals] = row;
                         if (
                             !expenseName || 
-                            ["EXPENSES", "HOME"].includes(expenseName) || 
+                            ["EXPENSES", "HOME", "TOTAL"].includes(expenseName) || 
                             (!projected && !actuals)
                         ) return;
-
+        
                         const difference = projected - actuals;
-
+        
+                        // Check if there's a meaningful amount (projected or actual)
+                        if (Number(projected) > 0 || Number(actuals) > 0) {
+                            categoriesWithAmounts.add(expenseName);
+                        }
+        
                         const tr = document.createElement("tr");
                         [expenseName, projected, actuals, difference].forEach((value, idx) => {
                             const td = document.createElement("td");
@@ -188,22 +196,23 @@
                             tr.appendChild(td);
                         });
                         table.appendChild(tr);
-
-                        if (expenseName !== "TOTAL") {
-                            const option = document.createElement("option");
-                            option.value = expenseName;
-                            option.textContent = expenseName;
-                            categorySelect.appendChild(option);
-                        }
                     });
-
+        
+                    // Populate dropdown with categories that have amounts
+                    categoriesWithAmounts.forEach(category => {
+                        const option = document.createElement("option");
+                        option.value = category;
+                        option.textContent = category;
+                        categorySelect.appendChild(option);
+                    });
+        
                     outputDiv.appendChild(table);
                 })
                 .catch(error => {
                     showMessage("Error fetching data: " + error.message, "error");
                 });
         }
-
+        
         // Show status message
         function showMessage(message, type) {
             const messageDiv = document.getElementById("message");
@@ -211,22 +220,22 @@
             messageDiv.className = `status ${type}`;
             messageDiv.style.display = "block";
         }
-
+        
         // Handle form submission
         document.getElementById("addEntryForm").addEventListener("submit", function(event) {
             event.preventDefault();
-
+        
             const category = document.getElementById("category").value;
             const amount = parseFloat(document.getElementById("amount").value);
             const month = document.getElementById("monthSelector").value;
-
+        
             if (!category || isNaN(amount)) {
                 showMessage("Please select a category and enter a valid amount.", "error");
                 return;
             }
-
+        
             const formData = { category, amount, month };
-
+        
             fetch(webAppUrl, {
                 method: "POST",
                 mode: "no-cors",
@@ -241,8 +250,8 @@
                 .catch(error => {
                     showMessage("Error submitting data: " + error.message, "error");
                 });
-        });
-
+        }); 
+        
         // Initialize
         window.onload = () => {
             populateMonths();
