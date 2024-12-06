@@ -4,71 +4,112 @@
     <title>Budget Tracker</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 2rem;
+            color: #1c1c1e;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
             max-width: 800px;
             margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
             padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        select, input, button {
+            font-family: inherit;
+            font-size: 1rem;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-right: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        select {
+            background-color: #f4f4f6;
+            color: #333;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056d6;
         }
         form {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
-        select, input, button {
-            padding: 10px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            font-weight: 600;
+            background-color: #f4f4f6;
         }
         .section-header {
             font-weight: bold;
             background-color: #e0e0e0;
+            text-transform: uppercase;
+            color: #555;
         }
         .positive {
-            color: green;
+            color: #34c759;
         }
         .negative {
-            color: red;
+            color: #ff3b30;
+        }
+        #message {
+            font-size: 0.9rem;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <h1>Budget Tracker</h1>
-    
-    <div>
-        <!-- Dropdown for selecting the month -->
-        <label for="monthSelector">Select Month:</label>
-        <select id="monthSelector"></select>
-        <button onclick="loadData()">Load Data</button>
-    </div>
+    <div class="container">
+        <div>
+            <label for="monthSelector">Select Month:</label>
+            <select id="monthSelector"></select>
+            <button onclick="loadData()">Load Data</button>
+        </div>
 
-    <div>
         <form id="addEntryForm">
             <select id="category" required>
                 <option value="">Select Category</option>
-                <!-- Categories will be dynamically populated -->
             </select>
-            <input type="number" id="amount" placeholder="Amount" required step="0.01" min="0"/>
+            <input type="number" id="amount" placeholder="Amount" required step="0.01" min="0" />
             <button type="submit">Add</button>
         </form>
-    </div>
 
-    <div id="output"></div>
-    <div id="message"></div>
+        <div id="output"></div>
+        <div id="message"></div>
+    </div>
 
     <script>
         const webAppUrl = "https://script.google.com/macros/s/AKfycbxaXE-fAQnhdqxnwA6Mgopdz40LoMtvPl-ubhtJwresDIPp4W2y_Vtfc1VDF620QTMsuA/exec";
-
-        const excludedCategories = ["", "TOTAL", "PROJECTED", "ACTUAL", "DIFFERENCE"];
 
         // Populate the month dropdown
         function populateMonths() {
@@ -79,17 +120,13 @@
             ];
 
             const currentMonthIndex = new Date().getMonth();
-            
             months.forEach((month, index) => {
                 const option = document.createElement("option");
                 option.value = month;
                 option.textContent = month;
-
-                // Pre-select the current month
                 if (index === currentMonthIndex) {
                     option.selected = true;
                 }
-
                 monthSelector.appendChild(option);
             });
         }
@@ -111,9 +148,18 @@
                     }
 
                     const outputDiv = document.getElementById("output");
-                    outputDiv.innerHTML = "";  // Clear previous data
+                    outputDiv.innerHTML = ""; // Clear previous data
 
                     const table = document.createElement("table");
+
+                    // Create table header
+                    const headerRow = document.createElement("tr");
+                    ["Expense", "Projected", "Actuals", "Difference"].forEach(heading => {
+                        const th = document.createElement("th");
+                        th.textContent = heading;
+                        headerRow.appendChild(th);
+                    });
+                    table.appendChild(headerRow);
 
                     const categorySelect = document.getElementById("category");
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
@@ -121,21 +167,9 @@
                     data.forEach((row, index) => {
                         if (index === 0 || row[0] === "TOTAL") return;
 
-                        if (["EXPENSES", "TRANSPORTATION", "DAILY LIVING", "ENTERTAINMENT", 
-                             "HEALTH", "VACATION / HOLIDAY"].includes(row[0])) {
-                            const sectionRow = document.createElement("tr");
-                            const sectionCell = document.createElement("td");
-                            sectionCell.textContent = row[0];
-                            sectionCell.colSpan = 4;
-                            sectionCell.classList.add("section-header");
-                            sectionRow.appendChild(sectionCell);
-                            table.appendChild(sectionRow);
-                            return;
-                        }
+                        if (!row[0]) return; // Skip empty rows
 
-                        if (!row[0]) return;
-
-                        if (!excludedCategories.includes(row[0])) {
+                        if (!["PROJECTED", "ACTUAL", "DIFFERENCE"].includes(row[0])) {
                             const option = document.createElement("option");
                             option.value = row[0];
                             option.textContent = row[0];
@@ -143,23 +177,17 @@
                         }
 
                         const tr = document.createElement("tr");
-                        row.forEach((cell, cellIndex) => {
-                            const td = document.createElement("td");
-                            if (cellIndex > 0) {
-                                const numCell = Number(cell);
-                                td.textContent = isNaN(numCell) ? cell : 
-                                    numCell.toLocaleString('en-US', {
-                                        style: 'currency', 
-                                        currency: 'USD', 
-                                        minimumFractionDigits: 0, 
-                                        maximumFractionDigits: 0
-                                    });
+                        const expenseName = row[0];
+                        const projected = row[1] || 0;
+                        const actuals = row[2] || 0;
+                        const difference = projected - actuals;
 
-                                if (cellIndex === 3 && numCell !== 0) {
-                                    td.classList.add(numCell > 0 ? 'positive' : 'negative');
-                                }
-                            } else {
-                                td.textContent = cell;
+                        // Add cells to the row
+                        [expenseName, projected, actuals, difference].forEach((value, idx) => {
+                            const td = document.createElement("td");
+                            td.textContent = idx > 0 ? Number(value).toLocaleString() : value;
+                            if (idx === 3) {
+                                td.classList.add(difference >= 0 ? "positive" : "negative");
                             }
                             tr.appendChild(td);
                         });
@@ -170,22 +198,22 @@
                 })
                 .catch(error => {
                     console.error("Error fetching data:", error);
-                    document.getElementById("output").textContent = "Error fetching data";
+                    document.getElementById("output").textContent = "Error fetching data.";
                 });
         }
 
-        // Submit new entry to the Google Apps Script
+        // Handle form submission
         document.getElementById("addEntryForm").addEventListener("submit", function(event) {
             event.preventDefault();
 
             const category = document.getElementById("category").value;
             const amount = parseFloat(document.getElementById("amount").value);
             const month = document.getElementById("monthSelector").value;
-            const messageDiv = document.getElementById("message");
 
             if (!category || isNaN(amount)) {
+                const messageDiv = document.getElementById("message");
                 messageDiv.textContent = "Please select a category and enter a valid amount.";
-                messageDiv.style.color = "red";
+                messageDiv.style.color = "#ff3b30";
                 return;
             }
 
@@ -197,21 +225,20 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
             })
-            .then(() => {
-                messageDiv.textContent = "Data submitted successfully!";
-                messageDiv.style.color = "green";
-                document.getElementById("category").selectedIndex = 0;
-                document.getElementById("amount").value = "";
-                fetchData(month);
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                messageDiv.textContent = "Error submitting data.";
-                messageDiv.style.color = "red";
-            });
+                .then(() => {
+                    document.getElementById("message").textContent = "Data submitted successfully!";
+                    document.getElementById("message").style.color = "#34c759";
+                    document.getElementById("amount").value = "";
+                    loadData();
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    document.getElementById("message").textContent = "Error submitting data.";
+                    document.getElementById("message").style.color = "#ff3b30";
+                });
         });
 
-        // Populate months and load data on page load
+        // Initialize
         window.onload = () => {
             populateMonths();
             loadData();
