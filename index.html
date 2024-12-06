@@ -2,11 +2,13 @@
 <html>
 <head>
     <title>Google Sheets Web App</title>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
     <h1>Read Data</h1>
     <button onclick="fetchData()">Fetch Data</button>
-    <pre id="output"></pre>
+    <div id="output"></div>
 
     <h1>Write Data</h1>
     <form onsubmit="writeData(event)">
@@ -23,7 +25,39 @@
             fetch(webAppUrl)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+                    const outputDiv = document.getElementById("output");
+                    outputDiv.innerHTML = "";  // Clear previous data
+
+                    // Create a table to display the data
+                    const table = document.createElement("table");
+
+                    // Create table header
+                    const header = table.createTHead();
+                    const headerRow = header.insertRow(0);
+                    const keys = Object.keys(data[0]);  // Get the keys from the first row as headers
+                    keys.forEach((key, index) => {
+                        const th = document.createElement("th");
+                        th.innerText = key;
+                        headerRow.appendChild(th);
+                    });
+
+                    // Create table body
+                    const body = table.createTBody();
+                    data.forEach(row => {
+                        const tr = document.createElement("tr");
+                        keys.forEach((key) => {
+                            const td = document.createElement("td");
+                            td.innerText = row[key] || "";  // Handle undefined values
+                            tr.appendChild(td);
+                        });
+                        body.appendChild(tr);
+                    });
+
+                    // Append the table to the output div
+                    outputDiv.appendChild(table);
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
                 });
         }
 
