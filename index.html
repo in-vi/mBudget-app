@@ -62,18 +62,27 @@
         }
 
         function writeData(event) {
-            event.preventDefault();
+            event.preventDefault();  // Prevent default form submission
             const name = document.getElementById("name").value;
             const age = document.getElementById("age").value;
             const email = document.getElementById("email").value;
-
+    
+            // Create the POST request with JSON payload
             fetch(webAppUrl, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json"  // Ensure JSON is being sent
                 },
-                body: JSON.stringify({ name, age, email })
-            }).then(() => alert("Data submitted successfully!"));
+                body: JSON.stringify({ name, age, email })  // Send data in JSON format
+            })
+            .then(response => response.text())  // Handle the response as text
+            .then(data => {
+                console.log(data);  // Log success message from Apps Script
+                alert("Data submitted successfully!");
+            })
+            .catch(error => {
+                console.error("Error:", error);  // Catch and log any error
+            });
         }
     </script>
 </body>
