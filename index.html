@@ -26,6 +26,24 @@
             padding: 20px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+        .status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
         select, input, button {
             font-family: inherit;
             font-size: 1rem;
@@ -50,11 +68,6 @@
         button:hover {
             background-color: #0056d6;
         }
-        form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -69,34 +82,26 @@
             font-weight: 600;
             background-color: #f4f4f6;
         }
-        .section-header {
-            font-weight: bold;
-            background-color: #e0e0e0;
-            text-transform: uppercase;
-            color: #555;
-        }
         .positive {
             color: #34c759;
         }
         .negative {
             color: #ff3b30;
         }
-        #message {
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
     <h1>Budget Tracker</h1>
     <div class="container">
-        <div>
+        <div id="message" class="status" style="display: none;"></div>
+
+        <div class="form-group">
             <label for="monthSelector">Select Month:</label>
             <select id="monthSelector"></select>
             <button onclick="loadData()">Load Data</button>
         </div>
 
-        <form id="addEntryForm">
+        <form id="addEntryForm" class="form-group">
             <select id="category" required>
                 <option value="">Select Category</option>
             </select>
@@ -105,7 +110,6 @@
         </form>
 
         <div id="output"></div>
-        <div id="message"></div>
     </div>
 
     <script>
@@ -143,7 +147,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        document.getElementById("output").textContent = data.error;
+                        showMessage(data.error, "error");
                         return;
                     }
 
@@ -165,24 +169,16 @@
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
 
                     data.forEach((row, index) => {
-                        if (index === 0 || row[0] === "TOTAL") return;
+                        const [expenseName, projected, actuals] = row;
+                        if (
+                            !expenseName || 
+                            ["EXPENSES", "HOME"].includes(expenseName) || 
+                            (!projected && !actuals)
+                        ) return;
 
-                        if (!row[0]) return; // Skip empty rows
-
-                        if (!["PROJECTED", "ACTUAL", "DIFFERENCE"].includes(row[0])) {
-                            const option = document.createElement("option");
-                            option.value = row[0];
-                            option.textContent = row[0];
-                            categorySelect.appendChild(option);
-                        }
-
-                        const tr = document.createElement("tr");
-                        const expenseName = row[0];
-                        const projected = row[1] || 0;
-                        const actuals = row[2] || 0;
                         const difference = projected - actuals;
 
-                        // Add cells to the row
+                        const tr = document.createElement("tr");
                         [expenseName, projected, actuals, difference].forEach((value, idx) => {
                             const td = document.createElement("td");
                             td.textContent = idx > 0 ? Number(value).toLocaleString() : value;
@@ -192,14 +188,28 @@
                             tr.appendChild(td);
                         });
                         table.appendChild(tr);
+
+                        if (expenseName !== "TOTAL") {
+                            const option = document.createElement("option");
+                            option.value = expenseName;
+                            option.textContent = expenseName;
+                            categorySelect.appendChild(option);
+                        }
                     });
 
                     outputDiv.appendChild(table);
                 })
                 .catch(error => {
-                    console.error("Error fetching data:", error);
-                    document.getElementById("output").textContent = "Error fetching data.";
+                    showMessage("Error fetching data: " + error.message, "error");
                 });
+        }
+
+        // Show status message
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById("message");
+            messageDiv.textContent = message;
+            messageDiv.className = `status ${type}`;
+            messageDiv.style.display = "block";
         }
 
         // Handle form submission
@@ -211,9 +221,7 @@
             const month = document.getElementById("monthSelector").value;
 
             if (!category || isNaN(amount)) {
-                const messageDiv = document.getElementById("message");
-                messageDiv.textContent = "Please select a category and enter a valid amount.";
-                messageDiv.style.color = "#ff3b30";
+                showMessage("Please select a category and enter a valid amount.", "error");
                 return;
             }
 
@@ -226,15 +234,12 @@
                 body: JSON.stringify(formData)
             })
                 .then(() => {
-                    document.getElementById("message").textContent = "Data submitted successfully!";
-                    document.getElementById("message").style.color = "#34c759";
+                    showMessage("Data submitted successfully!", "success");
                     document.getElementById("amount").value = "";
                     loadData();
                 })
                 .catch(error => {
-                    console.error("Error:", error);
-                    document.getElementById("message").textContent = "Error submitting data.";
-                    document.getElementById("message").style.color = "#ff3b30";
+                    showMessage("Error submitting data: " + error.message, "error");
                 });
         });
 
