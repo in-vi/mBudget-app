@@ -108,7 +108,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
-            overflow: hidden; /* Ensure the image stays inside the circle */
+            overflow: hidden;
         }
         
         .quick-select button:hover {
@@ -116,11 +116,37 @@
         }
         
         .quick-select button img {
-            width: 130%;  /* Make the image fill the button */
-            height: 130%; /* Make the image fill the button */
-            object-fit: cover;  /* Ensure the image covers the entire button without distortion */
+            width: 130%;
+            height: 130%;
+            object-fit: cover;
         }
 
+        /* Tab styles */
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 15px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f4f4f6;
+            color: #333;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background-color: #007aff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -128,37 +154,58 @@
     <div class="container">
         <div id="message" class="status" style="display: none;"></div>
 
-        <div class="form-group">
-            <label for="monthSelector">Select Month:</label>
-            <select id="monthSelector"></select>
-            <button onclick="loadData()">Load Data</button>
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('home')">Home</div>
+            <div class="tab" onclick="switchTab('summary')">Summary</div>
         </div>
 
-        <div class="quick-select">
-            <button onclick="selectCategory('Groceries')">
-                <img src="icons/groceries.png" alt="Groceries">
-            </button>
-            <button onclick="selectCategory('Eat Out')">
-                <img src="icons/eat-out.png" alt="Eat Out">
-            </button>
-            <button onclick="selectCategory('Public Transportation')">
-                <img src="icons/train.png" alt="Public Transportation">
-            </button>
+        <div id="homeTab" class="tab-content active">
+            <div class="form-group">
+                <label for="monthSelector">Select Month:</label>
+                <select id="monthSelector"></select>
+                <button onclick="loadData()">Load Data</button>
+            </div>
+
+            <div class="quick-select">
+                <button onclick="selectCategory('Groceries')">
+                    <img src="icons/groceries.png" alt="Groceries">
+                </button>
+                <button onclick="selectCategory('Eat Out')">
+                    <img src="icons/eat-out.png" alt="Eat Out">
+                </button>
+                <button onclick="selectCategory('Public Transportation')">
+                    <img src="icons/train.png" alt="Public Transportation">
+                </button>
+            </div>
+
+            <form id="addEntryForm" class="form-group">
+                <select id="category" required>
+                    <option value="">Select Category</option>
+                </select>
+                <input type="number" id="amount" placeholder="Amount" required step="0.01" min="0" />
+                <button type="submit">Add</button>
+            </form>
         </div>
 
-        <form id="addEntryForm" class="form-group">
-            <select id="category" required>
-                <option value="">Select Category</option>
-            </select>
-            <input type="number" id="amount" placeholder="Amount" required step="0.01" min="0" />
-            <button type="submit">Add</button>
-        </form>
-
-        <div id="output"></div>
+        <div id="summaryTab" class="tab-content">
+            <div id="output"></div>
+        </div>
     </div>
 
     <script>
         const webAppUrl = "https://script.google.com/macros/s/AKfycbxaXE-fAQnhdqxnwA6Mgopdz40LoMtvPl-ubhtJwresDIPp4W2y_Vtfc1VDF620QTMsuA/exec";
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`.tab:nth-child(${tabName === 'home' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
 
         // Populate the month dropdown
         function populateMonths() {
@@ -250,12 +297,14 @@
                     });
         
                     outputDiv.appendChild(table);
+
+                    // Switch to summary tab after loading data
+                    switchTab('summary');
                 })
                 .catch(error => {
                     showMessage("Error fetching data: " + error.message, "error");
                 });
         }
-
 
         // Show status message
         function showMessage(message, type) {
