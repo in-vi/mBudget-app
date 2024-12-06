@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Sheets Web App</title>
+</head>
+<body>
+    <h1>Read Data</h1>
+    <button onclick="fetchData()">Fetch Data</button>
+    <pre id="output"></pre>
+
+    <h1>Write Data</h1>
+    <form onsubmit="writeData(event)">
+        <input type="text" id="name" placeholder="Name" required />
+        <input type="number" id="age" placeholder="Age" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        const webAppUrl = "https://script.google.com/macros/s/AKfycbyANpJ0tYt1WthStD81B4AXpaBugKh5yoqhOxOMz3kz7JDNRKRDozsE8CofGIijCC_RbQ/exec";
+
+        function fetchData() {
+            fetch(webAppUrl)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function writeData(event) {
+            event.preventDefault();
+            const name = document.getElementById("name").value;
+            const age = document.getElementById("age").value;
+            const email = document.getElementById("email").value;
+
+            fetch(webAppUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name, age, email })
+            }).then(() => alert("Data submitted successfully!"));
+        }
+    </script>
+</body>
+</html>
