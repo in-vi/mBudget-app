@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>Budget Tracker</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Tracker</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -131,73 +132,65 @@
 
     // Fetch data from the Google Apps Script
     function fetchData(month) {
-      
       fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, {
-             method: 'GET',
-             mode: 'cors',  // Switch to 'cors' mode to allow CORS
-          })
-          .then(response => {
-             if (!response.ok) {
-                throw new Error('Network response was not ok');
-             }
-             return response.json();
-          })
-          .then(data => {
-             // Handle the data here
-          })
-          .catch(error => {
-             console.error('Error fetching data:', error);
-          });
+        method: 'GET',
+        mode: 'cors',  // Switch to 'cors' mode to allow CORS
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        const outputDiv = document.getElementById("output");
+        outputDiv.innerHTML = "";
 
+        const table = document.createElement("table");
 
-          const outputDiv = document.getElementById("output");
-          outputDiv.innerHTML = "";
-
-          const table = document.createElement("table");
-
-          const headerRow = document.createElement("tr");
-          ["Expense", "Actuals"].forEach(heading => {
-            const th = document.createElement("th");
-            th.textContent = heading;
-            headerRow.appendChild(th);
-          });
-          table.appendChild(headerRow);
-
-          let totalActuals = calculateTotal(data);
-
-          const categories = new Set();
-          data.forEach(row => {
-            const [expenseName, , actuals] = row;
-
-            if (!expenseName || expenseName === "Total" || actuals <= 0) {
-              return;
-            }
-
-            const tr = document.createElement("tr");
-            [expenseName, actuals].forEach(value => {
-              const td = document.createElement("td");
-              td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
-              tr.appendChild(td);
-            });
-            table.appendChild(tr);
-
-            categories.add(expenseName);
-          });
-
-          outputDiv.appendChild(table);
-
-          const totalSummaryDiv = document.getElementById("totalSummary");
-          totalSummaryDiv.innerHTML = `
-            <h3>Total Expenses for ${month}</h3>
-            <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
-          `;
-
-          populateCategories(categories);
-          switchTab('summary');
-        })
-        .catch(error => {
-          showMessage("Error fetching data: " + error.message, "error");
+        const headerRow = document.createElement("tr");
+        ["Expense", "Actuals"].forEach(heading => {
+          const th = document.createElement("th");
+          th.textContent = heading;
+          headerRow.appendChild(th);
         });
+        table.appendChild(headerRow);
+
+        let totalActuals = calculateTotal(data);
+
+        const categories = new Set();
+        data.forEach(row => {
+          const [expenseName, , actuals] = row;
+
+          if (!expenseName || expenseName === "Total" || actuals <= 0) {
+            return;
+          }
+
+          const tr = document.createElement("tr");
+          [expenseName, actuals].forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+
+          categories.add(expenseName);
+        });
+
+        outputDiv.appendChild(table);
+
+        const totalSummaryDiv = document.getElementById("totalSummary");
+        totalSummaryDiv.innerHTML = `
+          <h3>Total Expenses for ${month}</h3>
+          <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
+        `;
+
+        populateCategories(categories);
+        switchTab('summary');
+      })
+      .catch(error => {
+        showMessage("Error fetching data: " + error.message, "error");
+      });
     }
 
     // Show status message
@@ -232,24 +225,24 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.error) {
-            showMessage(data.error, "error");
-            return;
-          }
-          showMessage("Data submitted successfully!", "success");
-          document.getElementById("amount").value = "";
-          loadData();
-        })
-        .catch(error => {
-          showMessage("Error submitting data: " + error.message, "error");
-        });
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          showMessage(data.error, "error");
+          return;
+        }
+        showMessage("Data submitted successfully!", "success");
+        document.getElementById("amount").value = "";
+        loadData();
+      })
+      .catch(error => {
+        showMessage("Error submitting data: " + error.message, "error");
+      });
     });
 
     // Select category based on button click
