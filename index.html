@@ -132,7 +132,12 @@
     // Fetch data from the Google Apps Script
     function fetchData(month) {
       fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           if (data.error) {
             showMessage(data.error, "error");
@@ -221,7 +226,12 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       })
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           if (data.error) {
             showMessage(data.error, "error");
