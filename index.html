@@ -131,7 +131,11 @@
 
     // Fetch data from the Google Apps Script
     function fetchData(month) {
-      fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
+      
+      fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, {
+            method: 'GET',
+            mode: 'no-cors',  // Set no-cors mode to avoid CORS issue
+        })
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');
