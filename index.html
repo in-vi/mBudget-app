@@ -133,20 +133,22 @@
     function fetchData(month) {
       
       fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, {
-            method: 'GET',
-            mode: 'no-cors',  // Set no-cors mode to avoid CORS issue
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.error) {
-            showMessage(data.error, "error");
-            return;
-          }
+             method: 'GET',
+             mode: 'cors',  // Switch to 'cors' mode to allow CORS
+          })
+          .then(response => {
+             if (!response.ok) {
+                throw new Error('Network response was not ok');
+             }
+             return response.json();
+          })
+          .then(data => {
+             // Handle the data here
+          })
+          .catch(error => {
+             console.error('Error fetching data:', error);
+          });
+
 
           const outputDiv = document.getElementById("output");
           outputDiv.innerHTML = "";
