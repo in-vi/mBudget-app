@@ -2,7 +2,7 @@ const CACHE_NAME = "budget-tracker-cache";
 const urlsToCache = [
     "/",
     "/index.html",
-    "/style.css",
+    "/styles.css",
     "/script.js",
     "/icons/groceries.png",
     "/icons/eat-out.png",
