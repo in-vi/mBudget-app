@@ -246,15 +246,25 @@
 
         // Switch between tabs
         function switchTab(tabName) {
-            const tabs = document.querySelectorAll('.tab');
-            const tabContents = document.querySelectorAll('.tab-content');
+    const tabs = document.querySelectorAll('.tab'); // Select all tab elements
+    const tabContents = document.querySelectorAll('.tab-content'); // Select all tab content elements
 
-            tabs.forEach(tab => tab.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
+    // Remove the 'active' class from all tabs and content
+    tabs.forEach(tab => tab.classList.remove('active'));
+    tabContents.forEach(content => content.classList.remove('active'));
 
-            document.querySelector(`.tab:nth-child(${tabName === 'home' ? 1 : 2})`).classList.add('active');
-            document.getElementById(`${tabName}Tab`).classList.add('active');
-        }
+    // Add the 'active' class to the clicked tab and corresponding content
+    if (tabName === 'home') {
+        document.querySelector('.tab:nth-child(1)').classList.add('active'); // Activate the first tab
+        document.getElementById('homeTab').classList.add('active'); // Activate the Home content
+    } else if (tabName === 'summary') {
+        document.querySelector('.tab:nth-child(2)').classList.add('active'); // Activate the second tab
+        document.getElementById('summaryTab').classList.add('active'); // Activate the Summary content
+    }
+}
+
+
+
 
         // Populate the month dropdown
         function populateMonths() {
@@ -295,68 +305,14 @@
             const selectedMonth = document.getElementById("monthSelector").value;
             fetchData(selectedMonth);
         }
-        
-        // Fetch data from the Google Apps Script
-        function fetchData(month) {
-        fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
-        .then(response => response.json())
-        .then(data => {
-        if (data.error) {
-        showMessage(data.error, "error");
-        return;
-        }
-        
-        const outputDiv = document.getElementById("output");
-        outputDiv.innerHTML = ""; // Clear previous data
-        
-        const table = document.createElement("table");
-        
-        const headerRow = document.createElement("tr");
-        ["Expense", "Actuals"].forEach(heading => {
-        const th = document.createElement("th");
-        th.textContent = heading;
-        headerRow.appendChild(th);
-        });
-        table.appendChild(headerRow);
-        
-        let totalActuals = calculateTotal(data);
-        
-        data.forEach(row => {
-        const [expenseName, , actuals] = row;
-        
-        if (!expenseName || expenseName === "Total" || actuals <= 0) { return; } const tr=document.createElement("tr");
-          [expenseName, actuals].forEach(value=> {
-          const td = document.createElement("td");
-          td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
-          tr.appendChild(td);
-          });
-          table.appendChild(tr);
-          });
-        
-          outputDiv.appendChild(table);
-        
-          const totalSummaryDiv = document.getElementById("totalSummary");
-          totalSummaryDiv.innerHTML = `
-          <h3>Total Expenses for ${month}</h3>
-          <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
-          `;
-        
-          switchTab('summary');
-          })
-          .catch(error => {
-          showMessage("Error fetching data: " + error.message, "error");
-          });
-          }
-
-
-        function calculateTotal(data) {
+function calculateTotal(data) {
     let total = 0;
 
     data.forEach(row => {
         const [expenseName, , actuals] = row;
 
         // Skip invalid rows
-        if (!expenseName || expenseName === "TOTAL" || actuals <= 0) {
+        if (!expenseName || expenseName === "Total" || actuals <= 0) {
             return;
         }
 
@@ -367,13 +323,75 @@
     return total;
 }
 
+        // Fetch data from the Google Apps Script
+        function fetchData(month) {
+    fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showMessage(data.error, "error");
+                return;
+            }
+
+            const outputDiv = document.getElementById("output");
+            outputDiv.innerHTML = ""; // Clear previous data
+
+            const table = document.createElement("table");
+
+            const headerRow = document.createElement("tr");
+            ["Expense", "Actuals"].forEach(heading => {
+                const th = document.createElement("th");
+                th.textContent = heading;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            let totalActuals = calculateTotal(data);
+
+            data.forEach(row => {
+                const [expenseName, , actuals] = row;
+
+                if (!expenseName || expenseName === "Total" || actuals <= 0) {
+                    return;
+                }
+
+                const tr = document.createElement("tr");
+                [expenseName, actuals].forEach(value => {
+                    const td = document.createElement("td");
+                    td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            outputDiv.appendChild(table);
+
+            const totalSummaryDiv = document.getElementById("totalSummary");
+            totalSummaryDiv.innerHTML = `
+                <h3>Total Expenses for ${month}</h3>
+                <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
+            `;
+
+            switchTab('summary');
+        })
+        .catch(error => {
+            showMessage("Error fetching data: " + error.message, "error");
+        });
+}
+
+
         // Show status message
         function showMessage(message, type) {
-            const messageDiv = document.getElementById("message");
-            messageDiv.textContent = message;
-            messageDiv.className = `status ${type}`;
-            messageDiv.style.display = "block";
-        }
+          const messageDiv = document.getElementById("message");
+          messageDiv.textContent = message;
+          messageDiv.className = `status ${type}`; // Fixed syntax
+          messageDiv.style.display = "block";
+
+          setTimeout(() => {
+              messageDiv.style.display = "none";
+          }, 3000); // Hide after 3 seconds
+      }
+
 
         // Handle form submission
         document.getElementById("addEntryForm").addEventListener("submit", function(event) {
