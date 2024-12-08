@@ -124,7 +124,6 @@ function fetchData(month) {
         <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
       `;
 
-      populateCategories(categories);
       switchTab('summary');
     })
     .catch(error => {
@@ -142,64 +141,6 @@ function showMessage(message, type) {
   setTimeout(() => {
     messageDiv.style.display = "none";
   }, 3000);
-}
-
-// Handle form submission
-document.getElementById("addEntryForm").addEventListener("submit", function(event) {
-  event.preventDefault();
-
-  const category = document.getElementById("category").value;
-  const amount = parseFloat(document.getElementById("amount").value);
-  const month = document.getElementById("monthSelector").value;
-
-  if (!category || isNaN(amount)) {
-    showMessage("Please select a category and enter a valid amount.", "error");
-    return;
-  }
-
-  const formData = { category, amount, month };
-
-  fetch(webAppUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData)
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.error) {
-        showMessage(data.error, "error");
-        return;
-      }
-      showMessage("Data submitted successfully!", "success");
-      document.getElementById("amount").value = "";
-      loadData();
-    })
-    .catch(error => {
-      showMessage("Error submitting data: " + error.message, "error");
-    });
-});
-
-// Select category based on button click
-function selectCategory(category) {
-  const categorySelect = document.getElementById("category");
-  categorySelect.value = category;
-}
-
-// Populate categories from the fetched data
-function populateCategories(categories) {
-  const categorySelect = document.getElementById("category");
-  categorySelect.innerHTML = '<option value="">Select Category</option>';
-  categories.forEach(category => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categorySelect.appendChild(option);
-  });
 }
 
 if ('serviceWorker' in navigator) {
