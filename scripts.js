@@ -8,8 +8,13 @@ function switchTab(tabName) {
   tabs.forEach(tab => tab.classList.remove('active'));
   tabContents.forEach(content => content.classList.remove('active'));
 
-  document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
-  document.getElementById(`${tabName}Tab`).classList.add('active');
+  if (tabName === 'home') {
+    document.querySelector('.tab:nth-child(1)').classList.add('active');
+    document.getElementById('homeTab').classList.add('active');
+  } else if (tabName === 'summary') {
+    document.querySelector('.tab:nth-child(2)').classList.add('active');
+    document.getElementById('summaryTab').classList.add('active');
+  }
 }
 
 // Populate the month dropdown
@@ -32,85 +37,114 @@ function populateMonths() {
   });
 }
 
+// Toggle table visibility
+function toggleTable() {
+  const table = document.querySelector('table');
+  const toggleBtn = document.querySelector('.toggle-table-btn');
+
+  if (table.style.display === 'table') {
+    table.style.display = 'none';
+    toggleBtn.textContent = 'Show Expenses';
+  } else {
+    table.style.display = 'table';
+    toggleBtn.textContent = 'Hide Expenses';
+  }
+}
+
 // Load data for the selected month
 function loadData() {
   const selectedMonth = document.getElementById("monthSelector").value;
   fetchData(selectedMonth);
 }
 
-// Fetch data from the Google Apps Script
-function fetchData(month) {
-  fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, { method: 'GET', mode: 'cors' })
-    .then(response => {
-      if (!response.ok) throw new Error('Network response was not ok');
-      return response.json();
-    })
-    .then(data => {
-      renderData(data, month);
-    })
-    .catch(error => {
-      showMessage(`Error fetching data: ${error.message}`, "error");
-    });
-}
-
-// Render fetched data to a table
-function renderData(data, month) {
-  const outputDiv = document.getElementById("output");
-  outputDiv.innerHTML = "";
-
-  const table = document.createElement("table");
-  const headerRow = document.createElement("tr");
-  ["Expense", "Actuals"].forEach(heading => {
-    const th = document.createElement("th");
-    th.textContent = heading;
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  let totalActuals = 0;
-  const categories = new Set();
+function calculateTotal(data) {
+  let total = 0;
 
   data.forEach(row => {
     const [expenseName, , actuals] = row;
 
-    if (!expenseName || expenseName === "TOTAL") return;
+    if (!expenseName || expenseName === "TOTAL" || actuals <= 0) {
+      return;
+    }
 
-    const tr = document.createElement("tr");
-    [expenseName, actuals].forEach(value => {
-      const td = document.createElement("td");
-      td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
-      tr.appendChild(td);
+    total += actuals;
+  });
+
+  return total;
+}
+
+// Fetch data from the Google Apps Script
+function fetchData(month) {
+  fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, { method: 'GET', mode: 'cors' })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      const outputDiv = document.getElementById("output");
+      outputDiv.innerHTML = "";
+
+      const table = document.createElement("table");
+      const headerRow = document.createElement("tr");
+      ["Expense", "Actuals"].forEach(heading => {
+        const th = document.createElement("th");
+        th.textContent = heading;
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
+
+      let totalActuals = calculateTotal(data);
+
+      const categories = new Set();
+      data.forEach(row => {
+        const [expenseName, , actuals] = row;
+
+        if (!expenseName || expenseName === "Total" || actuals <= 0) {
+          return;
+        }
+
+        const tr = document.createElement("tr");
+        [expenseName, actuals].forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = typeof value === "number" ? Number(value).toLocaleString() : value;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+
+        categories.add(expenseName);
+      });
+
+      outputDiv.appendChild(table);
+
+      const totalSummaryDiv = document.getElementById("totalSummary");
+      totalSummaryDiv.innerHTML = `
+        <h3>Total Expenses for ${month}</h3>
+        <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
+      `;
+
+      populateCategories(categories);
+      switchTab('summary');
+    })
+    .catch(error => {
+      showMessage("Error fetching data: " + error.message, "error");
     });
-    table.appendChild(tr);
-
-    if (typeof actuals === "number") totalActuals += actuals;
-    categories.add(expenseName);
-  });
-
-  outputDiv.appendChild(table);
-
-  const totalSummaryDiv = document.getElementById("totalSummary");
-  totalSummaryDiv.innerHTML = `
-    <h3>Total Expenses for ${month}</h3>
-    <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
-  `;
-
-  populateCategories(categories);
 }
 
-// Populate categories in the form dropdown
-function populateCategories(categories) {
-  const categorySelect = document.getElementById("category");
-  categorySelect.innerHTML = '<option value="">Select Category</option>';
-  categories.forEach(category => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categorySelect.appendChild(option);
-  });
+// Show status message
+function showMessage(message, type) {
+  const messageDiv = document.getElementById("message");
+  messageDiv.textContent = message;
+  messageDiv.className = `status ${type}`;
+  messageDiv.style.display = "block";
+
+  setTimeout(() => {
+    messageDiv.style.display = "none";
+  }, 3000);
 }
 
-// Handle form submission for adding a new entry
+// Handle form submission
 document.getElementById("addEntryForm").addEventListener("submit", function(event) {
   event.preventDefault();
 
@@ -131,7 +165,9 @@ document.getElementById("addEntryForm").addEventListener("submit", function(even
     body: JSON.stringify(formData)
   })
     .then(response => {
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       return response.json();
     })
     .then(data => {
@@ -144,23 +180,37 @@ document.getElementById("addEntryForm").addEventListener("submit", function(even
       loadData();
     })
     .catch(error => {
-      showMessage(`Error submitting data: ${error.message}`, "error");
+      showMessage("Error submitting data: " + error.message, "error");
     });
 });
 
-// Show status messages
-function showMessage(message, type) {
-  const messageDiv = document.getElementById("message");
-  messageDiv.textContent = message;
-  messageDiv.className = `status ${type}`;
-  messageDiv.style.display = "block";
-
-  setTimeout(() => {
-    messageDiv.style.display = "none";
-  }, 3000);
+// Select category based on button click
+function selectCategory(category) {
+  const categorySelect = document.getElementById("category");
+  categorySelect.value = category;
 }
 
-// Initialize the app
+// Populate categories from the fetched data
+function populateCategories(categories) {
+  const categorySelect = document.getElementById("category");
+  categorySelect.innerHTML = '<option value="">Select Category</option>';
+  categories.forEach(category => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(() => console.log("Service Worker Registered"))
+      .catch(err => console.error("Service Worker Registration Failed:", err));
+  });
+}
+
+// Initialize
 window.onload = () => {
   populateMonths();
   loadData();
