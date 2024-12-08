@@ -160,59 +160,18 @@ function fetchData(month) {
     });
 }
 
-
-// Submit new expense
-function submitExpense(event) {
-  event.preventDefault();
-
-  const category = document.getElementById("category").value;
-  const amount = parseFloat(document.getElementById("amount").value);
-  const month = document.getElementById("monthSelector").value;
-
-  if (!category || isNaN(amount)) {
-    showMessage("Please select a category and enter a valid amount.", "error");
-    return;
-  }
-
-  const formData = { category, amount, month };
-
-  fetch(webAppUrl, {
-    method: "POST",
-    mode: 'cors',
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData)
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data.status === "error") {
-        showMessage(data.message, "error");
-        return;
-      }
-      showMessage("Expense added successfully!", "success");
-      document.getElementById("amount").value = "";
-      loadData();
-    })
-    .catch(error => {
-      showMessage("Error submitting expense: " + error.message, "error");
-    });
-}
 // Add amount to "internet"
 function addAmountToInternet() {
   const amount = parseFloat(document.getElementById("amount").value);
-
+  const category = document.getElementById("category").value;
   if (isNaN(amount) || amount <= 0) {
     showMessage("Please enter a valid amount to add.", "error");
     return;
   }
-
+  
   const month = document.getElementById("monthSelector").value;
 
-  const url = `${webAppUrl}?action=addAmount&amount=${encodeURIComponent(amount)}&month=${encodeURIComponent(month)}`;
+  const url = `${webAppUrl}?action=addAmount&amount=${encodeURIComponent(amount)}&category=${encodeURIComponent(category)}&month=${encodeURIComponent(month)}`;
 
   fetch(url, { method: 'GET', mode: 'cors' })
     .then(response => response.json())
@@ -221,7 +180,9 @@ function addAmountToInternet() {
         showMessage(data.error, "error");
       } else {
         showMessage(data.message, "success");
-        loadData(); // Reload the data to reflect the change
+        setTimeout(() => {
+          loadData(); // Reload the data to reflect the change
+        }, 2500); 
       }
     })
     .catch(error => {
@@ -243,8 +204,6 @@ function showMessage(message, type) {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  // Add event listener to form submission
-  document.getElementById("addEntryForm").addEventListener("submit", submitExpense);
 
   // Populate months and load initial data
   populateMonths();
