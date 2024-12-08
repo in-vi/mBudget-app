@@ -37,6 +37,24 @@ function populateMonths() {
   });
 }
 
+// Select category from quick select buttons
+function selectCategory(category) {
+  const categorySelect = document.getElementById("category");
+  categorySelect.value = category;
+}
+
+// Populate categories from the fetched data
+function populateCategories(categories) {
+  const categorySelect = document.getElementById("category");
+  categorySelect.innerHTML = '<option value="">Select Category</option>';
+  categories.forEach(category => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+}
+
 // Toggle table visibility
 function toggleTable() {
   const table = document.querySelector('table');
@@ -73,6 +91,7 @@ function calculateTotal(data) {
   return total;
 }
 
+
 // Fetch data from the Google Apps Script
 function fetchData(month) {
   fetch(`${webAppUrl}?month=${encodeURIComponent(month)}`, { method: 'GET', mode: 'cors' })
@@ -85,6 +104,15 @@ function fetchData(month) {
     .then(data => {
       const outputDiv = document.getElementById("output");
       outputDiv.innerHTML = "";
+
+      if (data.error) {
+        showMessage("Error fetching data: " + data.error, "error");
+        return;
+      }
+
+      // Show the "data loaded successfully" message from A1 if available
+      const successMessage = data.message || "Data loaded successfully"; // Change this if Apps Script returns the message.
+      outputDiv.innerHTML = `<h3>${successMessage}</h3>`;
 
       const table = document.createElement("table");
       const headerRow = document.createElement("tr");
@@ -124,10 +152,80 @@ function fetchData(month) {
         <p><strong>${Number(totalActuals).toLocaleString()}</strong></p>
       `;
 
+      populateCategories(categories);
       switchTab('summary');
     })
     .catch(error => {
       showMessage("Error fetching data: " + error.message, "error");
+    });
+}
+
+
+// Submit new expense
+function submitExpense(event) {
+  event.preventDefault();
+
+  const category = document.getElementById("category").value;
+  const amount = parseFloat(document.getElementById("amount").value);
+  const month = document.getElementById("monthSelector").value;
+
+  if (!category || isNaN(amount)) {
+    showMessage("Please select a category and enter a valid amount.", "error");
+    return;
+  }
+
+  const formData = { category, amount, month };
+
+  fetch(webAppUrl, {
+    method: "POST",
+    mode: 'cors',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData)
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.status === "error") {
+        showMessage(data.message, "error");
+        return;
+      }
+      showMessage("Expense added successfully!", "success");
+      document.getElementById("amount").value = "";
+      loadData();
+    })
+    .catch(error => {
+      showMessage("Error submitting expense: " + error.message, "error");
+    });
+}
+// Add amount to "internet"
+function addAmountToInternet() {
+  const amount = parseFloat(document.getElementById("amount").value);
+
+  if (isNaN(amount) || amount <= 0) {
+    showMessage("Please enter a valid amount to add.", "error");
+    return;
+  }
+
+  const month = document.getElementById("monthSelector").value;
+
+  const url = `${webAppUrl}?action=addAmount&amount=${encodeURIComponent(amount)}&month=${encodeURIComponent(month)}`;
+
+  fetch(url, { method: 'GET', mode: 'cors' })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        showMessage(data.error, "error");
+      } else {
+        showMessage(data.message, "success");
+        loadData(); // Reload the data to reflect the change
+      }
+    })
+    .catch(error => {
+      showMessage("Error adding amount: " + error.message, "error");
     });
 }
 
@@ -143,6 +241,16 @@ function showMessage(message, type) {
   }, 3000);
 }
 
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  // Add event listener to form submission
+  document.getElementById("addEntryForm").addEventListener("submit", submitExpense);
+
+  // Populate months and load initial data
+  populateMonths();
+  loadData();
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
@@ -150,9 +258,3 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.error("Service Worker Registration Failed:", err));
   });
 }
-
-// Initialize
-window.onload = () => {
-  populateMonths();
-  loadData();
-};
