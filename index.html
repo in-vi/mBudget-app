@@ -13,48 +13,43 @@
   <h1>Budget Tracker</h1>
   <div class="container">
     <div id="message" class="status" style="display: none;"></div>
-
     <div class="tab-container">
-      <div class="tab active" onclick="switchTab('home')">Home</div>
+      <div class="tab active" onclick="switchTab('home')">Month</div>
       <div class="tab" onclick="switchTab('summary')">Summary</div>
     </div>
-
     <div id="homeTab" class="tab-content active">
       <div class="form-group">
         <label for="monthSelector">Select Month:</label>
         <select id="monthSelector"></select>
         <button onclick="loadData()">Load Data</button>
       </div>
-
       <div class="quick-select">
         <button onclick="selectCategory('Groceries')">
-          <img src="icons/groceries.png" alt="Groceries">
+          Groceries
         </button>
         <button onclick="selectCategory('Eat Out')">
-          <img src="icons/eat-out.png" alt="Eat Out">
+          Eat Out
         </button>
         <button onclick="selectCategory('Public Transportation')">
-          <img src="icons/train.png" alt="Public Transportation">
+          Transport
         </button>
       </div>
-
       <form id="addEntryForm" class="form-group">
         <select id="category" required>
           <option value="">Select Category</option>
         </select>
         <input type="number" id="amount" placeholder="Amount" required step="0.01" min="0" />
-        <button type="submit">Add</button>
+        <button onclick="addAmountToInternet()">Add Amount to Internet</button>
       </form>
     </div>
-
     <div id="summaryTab" class="tab-content">
       <div class="total-summary" id="totalSummary"></div>
       <button class="toggle-table-btn" onclick="toggleTable()">Show Expenses</button>
       <div id="output"></div>
     </div>
   </div>
-
   <script src="scripts.js"></script>
 </body>
+
 
 </html>
