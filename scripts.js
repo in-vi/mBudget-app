@@ -1,4 +1,4 @@
-const webAppUrl = "https://script.google.com/macros/s/AKfycbxaXE-fAQnhdqxnwA6Mgopdz40LoMtvPl-ubhtJwresDIPp4W2y_Vtfc1VDF620QTMsuA/exec";
+const webAppUrl = "https://script.google.com/macros/s/AKfycbymqby-5_75j7Blw5LwQhv9R0P_1M6iGrPNoyB-YUbmgCYClKDHifWNtZUNPSIboLjjzw/exec";
 
 // Switch between tabs
 function switchTab(tabName) {
